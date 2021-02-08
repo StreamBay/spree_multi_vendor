@@ -1,8 +1,12 @@
 module SpreeMultiVendor::Spree::OrderDecorator
   def self.prepended(base)
     base.has_many :commissions, class_name: 'Spree::OrderCommission'
-    base.state_machine.after_transition to: :complete, do: :generate_order_commissions
-    base.state_machine.after_transition to: :complete, do: :send_notification_mails_to_vendors
+    unless base.state_machine.callbacks.values.any?{|callback| callback.any?{|cb| cb.instance_variable_get(:@methods).include?(:generate_order_commissions)}}
+      base.state_machine.after_transition to: :complete, do: :generate_order_commissions
+    end
+    unless base.state_machine.callbacks.values.any?{|callback| callback.any?{|cb| cb.instance_variable_get(:@methods).include?(:send_notification_mails_to_vendors)}}
+      base.state_machine.after_transition to: :complete, do: :send_notification_mails_to_vendors
+    end
   end
 
   def generate_order_commissions
